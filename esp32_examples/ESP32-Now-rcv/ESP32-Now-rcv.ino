@@ -1,65 +1,77 @@
+/*
+  ESP-NOW Demo - Receive
+  esp-now-demo-rcv.ino
+  Reads data from Initiator
+  
+  DroneBot Workshop 2022
+  https://dronebotworkshop.com
+*/
+
+// Include Libraries
 #include <esp_now.h>
 #include <WiFi.h>
-uint8_t broadcastAddress[] = {0xE0, 0xE2, 0xE6, 0x3D, 0xAF, 0xF8};// REPLACE WITH OTHER TRANSCEIVER MAC ADDRESS
-// Structure example to send data
-// Must match the receiver structure
+
+// Define a data structure
 typedef struct struct_message {
- 	char a[32];
- 	int b;
- 	float c;
- 	String d;
- 	bool e;
+  char a[32];
+  int b;
+  float c;
+  bool d;
 } struct_message;
+
+uint8_t allAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
+// Create a structured object
 struct_message myData;
-char dataRcv[15];
-// callbacks for sending and receiving data
-void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
- 	Serial.print("\r\nMaster packet sent:\t");
- 	Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
-}
+
+// Peer info
+esp_now_peer_info_t peerInfo;
+
+// Callback function executed when data is received
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
- 	memcpy(&dataRcv, incomingData, sizeof(dataRcv));
- 	Serial.print("\r\nBytes received: ");
- 	Serial.println(len);
- 	Serial.print("From slave: ");
- 	Serial.println(dataRcv);
- 	Serial.println();
+  memcpy(&myData, incomingData, sizeof(myData));
+  Serial.print("Data received: ");
+  Serial.println(len);
+  Serial.print("Character Value: ");
+  Serial.println(myData.a);
+  Serial.print("Integer Value: ");
+  Serial.println(myData.b);
+  Serial.print("Float Value: ");
+  Serial.println(myData.c);
+  Serial.print("Boolean Value: ");
+  Serial.println(myData.d);
+  Serial.println();
 }
+
 void setup() {
- 	// Init Serial Monitor
- 	Serial.begin(115200);
- 	// Set device as a Wi-Fi Station
- 	WiFi.mode(WIFI_STA);
- 	// Init ESP-NOW
- 	if (esp_now_init() != ESP_OK) {
- 			Serial.println(F("Error initializing ESP-NOW"));
- 			return;
- 	}
- 	Serial.print(F("Transceiver initialized : "));
- 	Serial.println(WiFi.macAddress());
- 	
- 	// Define callback functions
- 	esp_now_register_send_cb(OnDataSent);
- 	esp_now_register_recv_cb(OnDataRecv);
- 	// Register peer
- 	esp_now_peer_info_t peerInfo;
- 	memcpy(peerInfo.peer_addr, broadcastAddress, 6);
- 	peerInfo.channel = 0;
- 	peerInfo.encrypt = false;
- 	// Add peer
- 	if (esp_now_add_peer(&peerInfo) != ESP_OK) {
- 			Serial.println(F("Failed to add peer"));
- 			return;
- 	}
+  // Set up Serial Monitor
+  Serial.begin(115200);
+  
+  // Set ESP32 as a Wi-Fi Station
+  WiFi.mode(WIFI_STA);
+
+  // Initilize ESP-NOW
+  if (esp_now_init() != ESP_OK) {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
+  
+  // Register callback function
+  esp_now_register_recv_cb(OnDataRecv);
+  
+  memcpy(peerInfo.peer_addr, allAddress, 6);
+  peerInfo.channel = 0;
+  peerInfo.encrypt = false;
+
+  // Add peer
+  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+      Serial.println("Failed to add peer");
+      return;
+  }
+
 }
+ 
 void loop() {
- 	// Set values to send
- 	strcpy(myData.a, "Slave");
- 	myData.b = random(1, 20);
- 	myData.c = 1.2;
- 	myData.d = "hello";
- 	myData.e = false;
- 	// Send message via ESP-NOW
- 	esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));
- 	delay(1000);
+  //Serial.println("Hello Word!");
+
 }
