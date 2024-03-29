@@ -11,6 +11,8 @@
 #include <esp_now.h>
 #include <WiFi.h>
 
+uint8_t allAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
 // Define a data structure
 typedef struct struct_message {
   char a[32];
@@ -18,8 +20,6 @@ typedef struct struct_message {
   float c;
   bool d;
 } struct_message;
-
-uint8_t allAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
 // Create a structured object
 struct_message myData;
