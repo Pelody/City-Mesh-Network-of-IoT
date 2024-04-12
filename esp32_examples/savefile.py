@@ -1,25 +1,31 @@
 import serial
+import time
 
-# Serial port configuration
-serial_port = '/dev/ttyUSB0'  # Change this to your ESP32's serial port
+# Configure the serial port
+serial_port = '/dev/ttyUSB0'  # Adjust this to match your ESP32's serial port
 baud_rate = 115200
-timeout = 5  # Adjust timeout as needed
+ser = serial.Serial(serial_port, baud_rate, timeout=1)
 
-# File path to save the exported file
-exported_file_path = 'exported_file.txt'
+# Wait for the ESP32 to initialize
+time.sleep(2)
 
-# Open serial connection to ESP32
-with serial.Serial(serial_port, baud_rate, timeout=timeout) as ser:
-    # Send command to ESP32 to initiate file transfer
-    ser.write(b'E\n')  # Assuming 'E' is the command to export the file
+# Send the command to request the recorded data
+ser.write(b'R')
 
-    # Read file data from ESP32 and save it locally
-    with open(exported_file_path, 'wb') as file:
-        while True:
-            data = ser.read(1024)  # Adjust buffer size as needed
-            if not data:
-                break
-            file.write(data)
+# Read the data from the serial port
+file_data = b''
+while True:
+    data = ser.read(1024)
+    if not data:
+        break
+    file_data += data
 
-print(f'Exported file saved as {exported_file_path}')
+# Close the serial port
+ser.close()
+
+# Save the received data to a file on your computer
+with open('recording.txt', 'wb') as f:
+    f.write(file_data)
+
+print("File saved as 'recording.txt'")
 

@@ -13,13 +13,12 @@
 #include <WiFi.h>
 
 // Variables for test data
-int int_value;
-float float_value;
-bool bool_value = true;
-int sending;
+const char* jsonData = "{\"samples\":[-4,-7,-10,-12,-14,-15,-17,-18,-20,-21,-22,-23,-23,-24,-24,-24,-23,-23,-22,-22,-20,-20,-18,-17,-17,-16,-16,-16,-16,-16,-15,-15,-15,-15,-15,-15,-16,-16,-16,-16,-15,-15,-15,-15,-15,-15,-14,-14,-12,-12,-9,-8,-6,-5,-4,-3,-1,-1,0,0,0,1,0,0]}";
+
+int sending = 0;
+int incomingReadings = 0;
 
 // MAC Address of responder - edit as required
-//uint8_t broadcastAddress[] = {0xE0, 0xE2, 0xE6, 0x3D, 0xAF, 0xF8};  //MAC address of ESP No.2 : 0xE0, 0xE2, 0xE6, 0x3D, 0xAF, 0xF8
 uint8_t allAddress[][6] = {{0xE8, 0x31, 0xCD, 0x70, 0xFF, 0x8C},
 			{0xE0, 0xE2, 0xE6, 0x3D, 0xAF, 0xF8},
 			{0xE8, 0x31, 0xCD, 0x70, 0xF2, 0xC4},
@@ -34,20 +33,16 @@ const char macAddress[][18] = {
     "E0:E2:E6:3D:B2:04"
 };
 
-
-// Define a data structure
-typedef struct struct_message {
-  char a[32];
-  int b;
-  float c;
-  bool d;
-} 
-
-struct_message;
-
-// Create a structured object
-struct_message myData;
-struct_message incomingReadings;
+// Function to send JSON data
+void sendJsonData(const uint8_t *address, const uint8_t* data, size_t len) {
+  // Send the JSON string
+  esp_err_t result = esp_now_send(address, data, len);
+  if (result == ESP_OK) {
+    Serial.println("JSON data sent successfully");
+  } else {
+    Serial.println("Failed to send JSON data");
+  }
+}
 
 // Peer info
 esp_now_peer_info_t peerInfo;
@@ -64,9 +59,7 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
 //Data Recv
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomData, int len) {
   memcpy(&incomingReadings, incomData, sizeof(incomingReadings));
-  Serial.print("Bytes received: ");
-  Serial.println(len);
-  Serial.println(incomingReadings.b);
+
 }
 
 
@@ -86,7 +79,7 @@ void setup() {
   esp_now_register_send_cb(OnDataSent);
 
   // Receive Callback Function
-  //esp_now_register_recv_cb(OnDataRecv);
+  esp_now_register_recv_cb(OnDataRecv);
 
   // Dynamically add the peers
   for (int i = 0; i < sizeof(allAddress) / sizeof(allAddress[0]); i++) {
@@ -115,18 +108,9 @@ bool addPeerAtIndex(int index) {
 }
 
 void loop() {
-
-  int_value = random(1,20);
-  float_value = 1.3 * int_value;
-  bool_value = !bool_value;
-  // Format structured data
-  strcpy(myData.a, "Welcome to the Workshop!");
-  myData.b = int_value;
-  myData.c = float_value;
-  myData.d = bool_value;
   
   Serial.println("Trying to send to ESP32 number 5");
-  esp_err_t result = esp_now_send(allAddress[4], (uint8_t *)&myData, sizeof(myData));
+  esp_err_t result = esp_now_send(allAddress[4], (uint8_t *)jsonData, strlen(jsonData));
   delay(3000);
   if (sending != 0) {
     for (int i = 0; i < 4; i++) {
@@ -140,10 +124,9 @@ void loop() {
         Serial.println("Trying to send to ESP32 number " + String(j));
         
         // Try sending the data to the next address
-        esp_err_t result = esp_now_send(allAddress[i], (uint8_t *)&myData, sizeof(myData));
-        
- 
+        esp_err_t result = esp_now_send(allAddress[i], (uint8_t *)jsonData, strlen(jsonData));
          delay(3000);
+         
          if (sending == 0){
           break;
         }
