@@ -5,34 +5,13 @@
 // Maximum size of the received JSON data
 const size_t MAX_JSON_SIZE = 1024;
 
-// Function to validate JSON data
-bool isValidJson(const char *data) {
-  StaticJsonDocument<MAX_JSON_SIZE> doc;
-  DeserializationError error = deserializeJson(doc, data);
-  return !error;
-}
-
-esp_now_peer_info_t peerInfo;
-
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len) {
   // Buffer to hold the received JSON data
   char receivedJson[MAX_JSON_SIZE + 1]; // Add 1 for null terminator
 
-  // Check if the received data exceeds the buffer size
-  if (len > MAX_JSON_SIZE) {
-    Serial.println("Received JSON data is too large");
-    return;
-  }
-
   // Copy the received data to the buffer
   memcpy(receivedJson, incomingData, len);
   receivedJson[len] = '\0'; // Null-terminate the string
-
-  // Validate the received JSON data
-  if (!isValidJson(receivedJson)) {
-    Serial.println("Received data is not valid JSON");
-    return;
-  }
 
   // Parse the received JSON data
   StaticJsonDocument<MAX_JSON_SIZE> doc;
@@ -42,11 +21,15 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len) {
     return;
   }
   
+  Serial.println();
   // Print the parsed JSON data to the Serial Monitor
   Serial.println("Received JSON data:");
   serializeJson(doc, Serial); // Print the JSON data in a human-readable format
-  //Serial.println(); // Print a newline for better readability
+  Serial.println(); // Print a newline for better readability
 }
+
+//add peer
+esp_now_peer_info_t peerInfo;
 
 void setup() {
   Serial.begin(115200);
@@ -58,8 +41,9 @@ void setup() {
     return;
   }
 
-  // Register the receive callback function
+  // Register the receive and Send callback function
   esp_now_register_recv_cb(OnDataRecv);
+  //esp_now_register_send_cb(OnDataSent);
 
   // Set the peer address to broadcast (all 0xFF)
   memset(&peerInfo, 0, sizeof(peerInfo));
@@ -70,6 +54,6 @@ void setup() {
 }
 
 void loop() {
-  // Nothing to do in the loop
+
 }
 

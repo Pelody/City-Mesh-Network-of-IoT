@@ -3,73 +3,83 @@
 #include <ArduinoJson.h>
 #include <driver/i2s.h>
 
+// Connections to ICS-43434 microphone
+#define N_SAMPLES 64
 #define I2S_WS 19
 #define I2S_SD 18
 #define I2S_SCK 5
 #define I2S_PORT I2S_NUM_0
-#define BUFFER_LEN 64
+#define BUFFER_LEN 1024 
+#define MAX_JSON_SIZE 1024
 
-#define MAX_CHUNKS 10
+//recive json data
+StaticJsonDocument<MAX_JSON_SIZE> doc;
+char receivedJson[MAX_JSON_SIZE + 1];
+bool jsonReceived = false;
 
-int16_t sBuffer[BUFFER_LEN];
+// A-weighting filter coefficients
+const float a1 = -1.995864f;
+const float b0 = 1.0f;
+const float b1 = -1.989f;
 
+// Initialize variables for the IIR filter
+float prevIn = 0.0f;
+float prevOut = 0.0f;
+
+//check is the now sending successfull or not
+int sending = 0;
+
+//to check the recording start
 unsigned long recordingStartTime = 0;
-volatile bool isRecording = false;
-
-float a1 = 0.8;
-float b0 = 0.2;
 
 // JSON document size
-const size_t JSON_CAPACITY = JSON_OBJECT_SIZE(1) + JSON_ARRAY_SIZE(BUFFER_LEN);
+const size_t JSON_CAPACITY = JSON_OBJECT_SIZE(3) + 60;
 
 // Define a global variable to store JSON data
 StaticJsonDocument<JSON_CAPACITY> jsonData;
+String jsonString = "";
 
-// Define global variables
-int numChunks = 0;
-String jsonChunks[MAX_CHUNKS];
+int16_t sBuffer[BUFFER_LEN];
 
-void serializeJsonChunks(const JsonDocument& doc, size_t maxChunkSize) {
-    size_t serializedSize = measureJson(doc);
+uint8_t allAddress[][6] = {
+  {0xE8, 0x31, 0xCD, 0x70, 0xFF, 0x8C},
+  {0xE0, 0xE2, 0xE6, 0x3D, 0xAF, 0xF8},
+  {0xE8, 0x31, 0xCD, 0x70, 0xF2, 0xC4},
+  {0xE8, 0x31, 0xCD, 0x70, 0xF3, 0xA8},
+  {0xE0, 0xE2, 0xE6, 0x3D, 0xB2, 0x00} //04
+};
 
-    Serial.print("Serialized JSON Size: ");
-    Serial.println(serializedSize);
+const char* macAddress[] = {
+  "E8:31:CD:70:FF:8C",
+  "E0:E2:E6:3D:AF:F8",
+  "E8:31:CD:70:F2:C4",
+  "E8:31:CD:70:F3:A8",
+  "E0:E2:E6:3D:B2:04"
+};
 
-    char jsonBuffer[maxChunkSize + 1]; // +1 for null terminator
-    size_t offset = 0;
+//add peer
+esp_now_peer_info_t peerInfo;
 
-    while (offset < serializedSize) {
-        size_t remaining = serializedSize - offset;
-        size_t chunkSize = remaining > maxChunkSize ? maxChunkSize : remaining;
-
-        // Serialize a chunk of JSON into the buffer
-        size_t bytesWritten = serializeJson(doc, &jsonBuffer[0], chunkSize);
-
-        // Ensure the chunk is null-terminated
-        jsonBuffer[bytesWritten] = '\0';
-
-        // Print or send the chunked JSON string
-        Serial.print("JSON Chunk: ");
-        Serial.println(&jsonBuffer[0]);
-
-        offset += bytesWritten;
-    }
+//send data
+void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+  Serial.print("Last Packet Send Status:  ");
+  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+  sending = status;
 }
 
+//receive data
+void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len) {
 
-
-void startRecording() {
-  isRecording = true;
-  recordingStartTime = millis();
-  Serial.println("Recording started...");
-}
-
-void stopRecording() {
-  isRecording = false;
-  Serial.println("Recording stopped.");
+  // Copy the received JSON data into the global variable
+  strncpy(receivedJson, reinterpret_cast<const char*>(incomingData), min(len, MAX_JSON_SIZE));
+  receivedJson[min(len, MAX_JSON_SIZE)] = '\0'; // Ensure null termination
+  // Set the flag to indicate that JSON data has been received
+  jsonReceived = true;
+ 
 }
 
 void setupI2S() {
+  // Configure I2S
   const i2s_config_t i2s_config = {
     .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
     .sample_rate = 44100,
@@ -82,55 +92,19 @@ void setupI2S() {
     .use_apll = false
   };
 
+  // Install and start I2S driver
   i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL);
 }
 
 void setI2SPin() {
+  // Set I2S pin configurations
   const i2s_pin_config_t pin_config = {
     .bck_io_num = I2S_SCK,
     .ws_io_num = I2S_WS,
-    .data_out_num = -1,
+    .data_out_num = -1, // No data output
     .data_in_num = I2S_SD
   };
-
   i2s_set_pin(I2S_PORT, &pin_config);
-}
-
-int sending = 0;
-
-uint8_t allAddress[][6] = {
-  {0xE8, 0x31, 0xCD, 0x70, 0xFF, 0x8C},
-  {0xE0, 0xE2, 0xE6, 0x3D, 0xAF, 0xF8},
-  {0xE8, 0x31, 0xCD, 0x70, 0xF2, 0xC4},
-  {0xE8, 0x31, 0xCD, 0x70, 0xF3, 0xA8},
-  {0xE0, 0xE2, 0xE6, 0x3D, 0xB2, 0x04}
-};
-
-const char* macAddress[] = {
-  "E8:31:CD:70:FF:8C",
-  "E0:E2:E6:3D:AF:F8",
-  "E8:31:CD:70:F2:C4",
-  "E8:31:CD:70:F3:A8",
-  "E0:E2:E6:3D:B2:04"
-};
-
-esp_now_peer_info_t peerInfo;
-
-void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  Serial.println("Last Packet Send Status:");
-  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
-  sending = status;
-}
-
-void OnDataRecv(const uint8_t *mac, const uint8_t *incomData, int len) {
-  DeserializationError error = deserializeJson(jsonData, incomData, len);
-  if (error) {
-    Serial.println("Failed to parse incoming JSON");
-    return;
-  }
-  Serial.println("Received JSON:");
-  serializeJsonPretty(jsonData, Serial);
-  Serial.println();
 }
 
 void setup() {
@@ -151,14 +125,10 @@ void setup() {
       return;
     }
   }
-
-  Serial.println("Starting setup Microphone");
-  setupI2S();
-  setI2SPin();
-  i2s_start(I2S_PORT);
-  delay(500);
-  Serial.println("Recording started automatically...");
-  startRecording();
+    setupI2S();
+    setI2SPin();
+    i2s_start(I2S_PORT);
+    delay(500);
 }
 
 bool addPeerAtIndex(int index) {
@@ -174,97 +144,116 @@ bool addPeerAtIndex(int index) {
   }
 }
 
-String jsonString;
-size_t jsonLength;
 
 void loop() {
-    while (isRecording) {
-        if (millis() - recordingStartTime >= 10000) {
-            Serial.println("Recording stopped after 10 seconds");
-            stopRecording();
-            continue;
-        }
+    if (recordingStartTime == 0) {
+    // Start recording
+    recordingStartTime = millis();
+    }
+    
+    size_t bytesIn = 0;
+    esp_err_t result_sound = i2s_read(I2S_PORT, &sBuffer, BUFFER_LEN * 2, &bytesIn, portMAX_DELAY);
+     
+    // Check if one second has elapsed
+    if (millis() - recordingStartTime < 1000) {
+        float spl = getSoundPressureLevel();
+        float dB = applyAWeightingAndConvertToDB(spl);
 
-        size_t bytesIn = 0;
-        esp_err_t result_sound = i2s_read(I2S_PORT, &sBuffer, BUFFER_LEN * 2, &bytesIn, portMAX_DELAY);
-
-        if (result_sound == ESP_OK) {
-            int16_t samples_read = bytesIn / 2;
-            if (samples_read > 0) {
-                if (isRecording) {
-                    DynamicJsonDocument doc(JSON_CAPACITY);
-                    JsonArray samples = doc.createNestedArray("samples");
-                    // Apply IIR filter to samples
-                    for (int i = 0; i < samples_read; i++) {
-                      // Apply the IIR filter
-                      // y[n] = b0 * x[n] + a1 * y[n-1]
-                      // Note: This is a first-order IIR filter
-                      if (i == 0) {
-                        sBuffer[i] = b0 * sBuffer[i];
-                      } 
-                      else {
-                        sBuffer[i] = b0 * sBuffer[i] + a1 * sBuffer[i - 1];
-                      }
-                      samples.add(sBuffer[i]);
-                    }
-                    serializeJsonChunks(doc, 250); // Generate JSON chunks
-                    numChunks += 1;
-                }
-            }
-        }
+        // Clear the previous JSON data
+        jsonData.clear();
+        // Add sound pressure level (dB) to JSON
+        jsonData["db"] = dB;
+        // Add timestamp (ts) to JSON
+        jsonData["ts"] = millis();  //millis()
+        // Add Mac address to JSON
+        jsonData["mac"] = WiFi.macAddress();
+        
+        serializeJson(jsonData, jsonString);  
     }
 
-    // After recording stops, send the JSON chunks
-    Serial.print("Number of JSON chunks: ");
-    Serial.println(numChunks);
-
-    Serial.println("Sending JSON data to Num 5");
-
-    for (int i = 0; i < numChunks; i++) {
-        Serial.print("Sending JSON chunk ");
-        Serial.print(i + 1);
-        Serial.print(" of ");
-        Serial.println(numChunks);
-
-        esp_err_t result = esp_now_send(allAddress[4], reinterpret_cast<const uint8_t *>(jsonChunks[i].c_str()), jsonChunks[i].length());
-        if (result != ESP_OK) {
-            Serial.println("Failed to send JSON chunk via ESP-NOW");
-        } else {
-            Serial.print("JSON Chunk Sent: ");
-            Serial.println(jsonChunks[i]);
-        }
-        delay(3000);
-    }
-
-    // Reset numChunks for the next recording session
-    numChunks = 0;
-
+    Serial.println(jsonString);
+    Serial.println("Trying to send to ESP32 number 5" );
+    esp_err_t result = esp_now_send(allAddress[4], (uint8_t *)jsonString.c_str(), jsonString.length() + 1);
     // Delay between loop iterations
     delay(3000);
-
-
-        
+    
   if (sending != 0) {
     for (int i = 0; i < 4; i++) {
-      Serial.println(macAddress[i]);
+      
       if (strcmp(WiFi.macAddress().c_str(), macAddress[i]) == 0) {
-        Serial.println("Skip the own address");
+        Serial.println("Skip the own address  ");
+        Serial.println(macAddress[i]);
         continue;
       } 
       else {
         int j = i + 1;
+        
         Serial.println("Trying to send to ESP32 number " + String(j));
-        esp_err_t result = esp_now_send(allAddress[i], reinterpret_cast<const uint8_t *>(jsonData.as<String>().c_str()), jsonData.as<String>().length());
+        Serial.print("MAC address: ");
+        Serial.println(macAddress[i]);
+        
+        esp_err_t result = esp_now_send(allAddress[i], (uint8_t *)jsonString.c_str(), jsonString.length() + 1);
         delay(3000);
         
         if (sending == 0) {
+          jsonData["db"] = nullptr;
+          prevIn = 0.0f;
+          prevOut = 0.0f;
+          recordingStartTime = 0;
           break;
         }
       }
     }
     delay(3000);
   }
+  else{
+    // Reset the dB value after sending data
+    jsonData["db"] = nullptr;
+    prevIn = 0.0f;
+    prevOut = 0.0f;
+    recordingStartTime = 0;
+    
+    if (jsonReceived) {
+      Serial.println("Sending Backup JSON string: ");
+      // Send the JSON data stored in receivedJson
+      esp_err_t result = esp_now_send(allAddress[4], reinterpret_cast<uint8_t*>(receivedJson), strlen(receivedJson) + 1);
+      delay(3000);
+      jsonReceived = false;
+    } 
+  }
   // Delay between loop iterations
   delay(3000);
+  Serial.println();
 }
 
+float getSoundPressureLevel() {
+    // Read samples from I2S
+    int16_t samples[N_SAMPLES];
+    size_t bytes_read;
+    esp_err_t read_result = i2s_read(I2S_PORT, &samples, N_SAMPLES * sizeof(int16_t), &bytes_read, portMAX_DELAY);
+
+    // Calculate RMS value of samples
+    float sum = 0.0f;
+    
+    for (int i = 0; i < N_SAMPLES; ++i) {
+        sum += samples[i] * samples[i];
+    }
+    
+    float rms = sqrt(sum / N_SAMPLES);
+    // Convert RMS to voltage (assuming Vref = 3.3V)
+    float voltage = rms * (3.3 / 32768.0);
+    // Calculate sound pressure level (SPL) in dB
+    float spl = 94.0 + 20.0 * log10(voltage / 0.0069);
+
+    return spl;
+}
+
+float applyAWeightingAndConvertToDB(float spl) {
+  // Apply A-weighting filter
+  float output = (b0 * spl) + (b1 * prevIn) + (a1 * prevOut);
+  // Update previous input and output
+  prevIn = spl;
+  prevOut = output;
+  // Convert filtered output to dB
+  return output;
+}
