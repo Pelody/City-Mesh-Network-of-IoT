@@ -12,8 +12,8 @@ ESP32-DevKitC-DA ESP32-WROOM-DA Wi-Fi
 ![ESP32-back](img/ESP32-back.jpg)
 
 ICS-43434
-![ICS-front](![ESP32-front](img/ICS-front.jpg))
-![ICS-back](![ESP32-back](img/ICS-back.jpg))
+![ICS-front](![ESP32-front](img/ICS-front.jpg)
+![ICS-back](![ESP32-back](img/ICS-back.jpg)
 
 
 ## ESP32-Now Mesh network
