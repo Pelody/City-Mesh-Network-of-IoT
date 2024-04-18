@@ -8,7 +8,7 @@ However, the project faces challenges due to the newness of ESP-Now technology, 
 
 ### Tools
 ESP32-DevKitC-DA ESP32-WROOM-DA Wi-Fi
-![ESP32-front](img/ESP32-front.jpg)
+![ESP32-front](img/ESP32-front.jpg=500x700)
 ![ESP32-back](img/ESP32-back.jpg)
 
 ICS-43434
