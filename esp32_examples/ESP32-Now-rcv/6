@@ -1,0 +1,66 @@
+#include <WiFi.h>
+#include <PubSubClient.h>
+
+const char* ssid = "your wifi";
+const char* password = "your wifi password";
+const char* mqttServer = "raspberry mac address";
+const int mqttPort = ;
+const char* mqttUser = "";
+const char* mqttPassword = "";
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+void setup() {
+  Serial.begin(115200);
+  Serial2.begin(115200, SERIAL_8N1, 16, 17);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+  Serial.println("Connected to WiFi");
+
+  client.setServer(mqttServer, mqttPort);
+  if (client.connect("ESP32Client", mqttUser, mqttPassword)) {
+    Serial.println("Connected to MQTT");
+  }
+}
+
+void sendInChunks(const String& data, unsigned int maxChunkSize = 100) {
+    int totalLength = data.length();
+    for (int i = 0; i < totalLength; i += maxChunkSize) {
+        int end = i + maxChunkSize;
+        if (end > totalLength) end = totalLength;
+        String chunk = data.substring(i, end);
+        if (client.publish("nyit/sensor/db", chunk.c_str())) {
+            Serial.println("Chunk sent successfully");
+        } else {
+            Serial.println("Failed to send chunk");
+        }
+        delay(100); // Ensure the broker has time to process each message
+    }
+}
+
+void loop() {
+  if (!client.connected()) {
+    if (client.connect("ESP32Client", mqttUser, mqttPassword)) {
+      Serial.println("Reconnected to MQTT");
+    } else {
+      Serial.println("Failed to reconnect to MQTT.");
+      delay(5000);
+      return;
+    }
+  }
+  client.loop();
+
+  if (Serial2.available() > 0) {
+    String data = Serial2.readStringUntil('\n');
+    Serial.print("Received data from UART2: ");
+    Serial.println(data);
+
+    sendInChunks(data); // Use the new function to send data in chunks
+  }
+
+  delay(1000); // Adjust based on how frequently you need to perform loop operations
+}
