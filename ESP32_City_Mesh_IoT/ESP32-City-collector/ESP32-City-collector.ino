@@ -1,6 +1,7 @@
 #include <esp_now.h>
 #include <WiFi.h>
 #include <ArduinoJson.h>
+#include <HardwareSerial.h>  // Include this library for hardware serial functionality
 
 // Maximum size of the received JSON data
 const size_t MAX_JSON_SIZE = 1024;
@@ -45,12 +46,12 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len) {
   // Send JSON data over UART
   String jsonString;
   serializeJson(doc, jsonString);
-  Serial2.write(jsonString.c_str());
+  Serial2.write(jsonString.c_str()); // Send data via Serial2
 }
 
 void setup() {
-  Serial.begin(115200);
-  Serial2.begin(9600);
+  Serial.begin(115200); // Used for debugging output
+  Serial2.begin(115200, SERIAL_8N1, 16, 17); // Initialize Serial2 using GPIO16 as RX, GPIO17 as TX
 
   WiFi.mode(WIFI_STA);
 
@@ -70,4 +71,5 @@ void setup() {
 
 void loop() {
   // Nothing to do in the loop
+}
 }
