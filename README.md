@@ -17,6 +17,8 @@ ICS-43434
 <img src="img/ICS-front.jpg" height="400px" width="300px" /><font></font>
 <img src="img/ICS-back.jpg" height="400px" width="300px" />
 
+## Structure Diagram
+<img src="img/ESP-MeshNetwork.png" height="400px" width="300px" />
 
 ## ESP32-Now Mesh network
 #### Sound signal collection
