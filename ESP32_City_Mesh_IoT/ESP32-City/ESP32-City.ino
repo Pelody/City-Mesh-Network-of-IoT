@@ -18,13 +18,18 @@ char receivedJson[MAX_JSON_SIZE + 1];
 bool jsonReceived = false;
 
 // A-weighting filter coefficients
-const float a1 = -1.995864f;
+const float a1 = -2.0185f;
+const float a2 = 0.9820f;
+const float a3 = -0.0000011f;
 const float b0 = 1.0f;
-const float b1 = -1.989f;
+const float b1 = -2.0f;
+const float b2 = 1.0f;
 
 // Initialize variables for the IIR filter
-float prevIn = 0.0f;
-float prevOut = 0.0f;
+float prevIn = 0.0f;  // Input at time (n-1)
+float prevPrevIn = 0.0f;  // Input at time (n-2)
+float prevOut = 0.0f;  // Output at time (n-1)
+float prevPrevOut = 0.0f;  // Output at time (n-2)
 
 //check is the now sending successfull or not
 int sending = 0;
@@ -153,12 +158,12 @@ void loop() {
     
     size_t bytesIn = 0;
     esp_err_t result_sound = i2s_read(I2S_PORT, &sBuffer, BUFFER_LEN * 2, &bytesIn, portMAX_DELAY);
-     
     // Check if one second has elapsed
-    if (millis() - recordingStartTime < 1000) {
+    while (millis() - recordingStartTime < 1000) {
         float spl = getSoundPressureLevel();
         float dB = applyAWeightingAndConvertToDB(spl);
-
+        Serial.println(spl);
+        delay(10);
         // Clear the previous JSON data
         jsonData.clear();
         // Add sound pressure level (dB) to JSON
@@ -250,9 +255,11 @@ float getSoundPressureLevel() {
 
 float applyAWeightingAndConvertToDB(float spl) {
   // Apply A-weighting filter
-  float output = (b0 * spl) + (b1 * prevIn) + (a1 * prevOut);
+  float output = (b0 * spl) + (b1 * prevIn) + (b2 * prevPrevIn) - (a1 * prevOut) - (a2 * prevPrevOut);
   // Update previous input and output
+  prevPrevIn = prevIn;
   prevIn = spl;
+  prevPrevOut = prevOut;
   prevOut = output;
   // Convert filtered output to dB
   return output;
