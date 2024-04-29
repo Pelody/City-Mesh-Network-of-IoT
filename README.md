@@ -6,7 +6,7 @@ In addition to sound sensor data, the project utilizes advanced signal processin
 
 However, the project faces challenges due to the newness of ESP-Now technology, impacting adoption and technical support. Integrating diverse communication protocols like ESP-Now, UART, and MQTT adds complexity, requiring careful configuration for stable data flows. Despite these hurdles, the project showcases the potential of ESP32 and Raspberry Pi in long-distance IoT communication, highlighting their scalability and effectiveness in smart city contexts.
 
-### Tools
+## Tools
 ESP32-DevKitC-DA ESP32-WROOM-DA Wi-Fi
 
 <img src="img/ESP32-front.jpg" height="400px" width="300px" /><font></font>
@@ -18,7 +18,7 @@ ICS-43434
 <img src="img/ICS-back.jpg" height="400px" width="300px" />
 
 ## Structure Diagram
-<img src="img/ESP-MeshNetwork.png" height="400px" width="300px" />
+<img src="img/ESP-MeshNetwork.png" height="919px" width="1410px" />
 
 ## ESP32-Now Mesh network
 #### Sound signal collection
