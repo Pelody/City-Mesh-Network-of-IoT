@@ -1,7 +1,6 @@
 <div align="center">
   <h1 align="center">City Mesh-Network of IoT</h1>
   <br/>
-  <h3 align="center">New York Institute of Technology</h3>
   <img src="img/nyit.png" height="110px" width="300px">
   <br/>
   <h5 align="center">Po Ling Huang, Hsin Tzu Lai, Jimmy Qian</h5>
