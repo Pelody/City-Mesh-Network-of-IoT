@@ -1,12 +1,8 @@
 <h3 align="center">City Mesh-Network of IoT</h3>
 <br/>
-<center>
-<p>
-  <h5>New York Institute of Technology</h5>
-  <h6>Po Ling Huang, Hsin Tzu Lai, Jimmy Qian</h6>
-  <h6>Professor: Sara Khanchi</h6>
-</p>
-</center>
+<h5 align="center">New York Institute of Technology</h5>
+<h6 align="center">Po Ling Huang, Hsin Tzu Lai, Jimmy Qian</h6>
+<h6 align="center">Professor: Sara Khanchi</h6>
 
 # Abstract
 This project introduces a state-of-the-art IoT solution for real-time sound monitoring in smart cities. It utilizes ESP32 microcontrollers to create the mesh network for seamless data collection, analysis, and transmission, connecting to cloud services via Raspberry Pi. The system employs an ESP-Now mesh network for robust communication over long distances, crucial for urban IoT applications.
