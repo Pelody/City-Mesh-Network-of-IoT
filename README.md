@@ -1,4 +1,4 @@
-<h3 align="center">City Mesh-Network of IoT</h3>
+<h1 align="center">City Mesh-Network of IoT</h1>
 <br/>
 <h5 align="center">New York Institute of Technology</h5>
 <h6 align="center">Po Ling Huang, Hsin Tzu Lai, Jimmy Qian</h6>
