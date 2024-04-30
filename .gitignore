@@ -1,2 +1,3 @@
-/serialplot
-/venv
+serialplot
+venv/
+.env
