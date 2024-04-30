@@ -1,22 +1,22 @@
-version: "3.7"
+version: "3.8"
 
 services:
-  mqtt5:
-    image: eclipse-mosquitto
-    container_name: mqtt5
+  web:
+    build: .
+    image: rsp-system:0.0.3
     ports:
-      - "1883:1883"
-      - "9001:9001"
+      - "8000:8000"
+      - "8090:8090"
+    env_file:
+      - .env
+
+  mongodb:
+    image: mongo:4.2.19
+    ports:
+      - "27017:27017"
     volumes:
-      - ./config:/mosquitto/config:rw
-      - ./data:/mosquitto/data:rw
-      - ./log:/mosquitto/log:rw
+      - data:/data/db
 
+# Persistent Data Volume
 volumes:
-  config:
   data:
-  log:
-
-networks:
-  default:
-    name: mqtt5-networkS
