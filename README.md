@@ -3,7 +3,7 @@
   <br/>
   <img src="img/nyit.png" height="110px" width="300px">
   <br/>
-  <h4 align="center">Author</h4>
+  <h4 align="center">Team Banana</h4>
   <h6 align="center">Po Ling Huang, Hsin Tzu Lai, Jimmy Qian</h6>
   <h4 align="center">Professor</h4>
   <h6 align="center">Sara Khanchi</h6>
