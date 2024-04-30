@@ -52,3 +52,27 @@ This marks the beginning of the entire workflow, initializing all components for
 * Raw sound signals are processed using Infinite Impulse Response (IIR) filtering and A-Weight algorithms to enhance relevant sound patterns and calculate sound intensity in decibels (dB).
 * Processed data, along with timestamps, is formatted into a JSON string for efficient storage and transmission.
 
+### 3. Data Transmission via ESP-Now to ESP32 No.5
+Processed sound data from ESP1-ESP4 is wirelessly transmitted to ESP32 #5 (ESP5) using the ESP-NOW protocol, establishing direct communication between nodes.
+
+### 4. Data Aggregation and Transmission from ESP32 No.5 to ESP32 No.6
+* ESP5 aggregates received sound data from ESP1-ESP4 and transfers it to ESP32 #6 (ESP6) through a wired connection.
+* ESP6 prepares the aggregated data for transmission.
+
+### 5. MQTT Communication between ESP32 No.6 and Raspberry Pi
+ESP6 utilizes the MQTT protocol to transmit aggregated sound data to the Raspberry Pi, establishing a communication link between the ESP32 network and the central processing unit.
+
+### 6. Data Processing by Raspberry Pi
+* Upon receiving the data, the Raspberry Pi processes it using the Fast API framework within the Archethought RSP System.
+* Fast API interprets the data, extracts relevant information, and prepares it for storage.
+
+### 7. Data Storage in MongoDB
+* The processed sound data is securely stored in MongoDB, a versatile NoSQL database residing on the Raspberry Pi.
+* MongoDB's flexible structure and high-performance capabilities enable efficient storage and retrieval of sound data for further analysis.
+
+### 8. Cloud Integration and Analysis
+* Sound data stored in MongoDB is seamlessly integrated with cloud services for comprehensive analysis and visualization.
+* Cloud-based tools and algorithms are employed to extract insights and patterns from the collected sound data, facilitating informed decision-making and monitoring of environmental conditions.
+
+### 9. Conclusion
+The entire data transmission, processing, storage, and analysis process concludes at this stage, providing a robust framework for real-time sound monitoring within IoT networks.
