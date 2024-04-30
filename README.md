@@ -44,10 +44,10 @@ As we embark on this journey of experimentation and validation, we remain cogniz
 ## Test Procedure Design
 This section outlines the detailed steps involved in the test procedure designed to validate our real-time sound monitoring solution within IoT networks. The procedure encompasses initializing the ESP32 devices, establishing the ESP-Now mesh network, collecting sound signals using integrated microphones, processing the sound data through advanced algorithms, and transmitting the processed data to the Raspberry Pi via MQTT communication.
 
-### Initialization
+### 1. Initialization
 This marks the beginning of the entire workflow, initializing all components for the sound monitoring system.
 
-### Microphone Configuration and Data Collection
+### 2. Microphone Configuration and Data Collection
 * Each ESP32 unit (ESP1-ESP4) is equipped with a high-fidelity microphone to capture environmental sounds.
 * Raw sound signals are processed using Infinite Impulse Response (IIR) filtering and A-Weight algorithms to enhance relevant sound patterns and calculate sound intensity in decibels (dB).
 * Processed data, along with timestamps, is formatted into a JSON string for efficient storage and transmission.
