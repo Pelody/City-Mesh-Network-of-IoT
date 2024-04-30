@@ -1,3 +1,10 @@
+.center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 50%;
+}
+
 <h1 align="center">City Mesh-Network of IoT</h1>
 <br/>
 <h3 align="center">New York Institute of Technology</h3>
