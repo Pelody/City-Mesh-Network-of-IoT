@@ -3,7 +3,6 @@
 <br/>
 <p align="center">
   <h5>New York Institute of Technology</h5>
-  <br />
   <h6>Po Ling Huang, Hsin Tzu Lai, Jimmy Qian</h6>
   <h6>Professor: Sara Khanchi</h6>
 </p>
