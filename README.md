@@ -50,7 +50,7 @@ With our environment set up, we meticulously collect and process sound data usin
 Ensuring seamless communication within our IoT network is paramount to the success of our solution. To achieve this, we employ a robust connectivity management strategy. ESP32 devices are programmed to prioritize direct transmission to a central node, optimizing data transfer efficiency. Moreover, backup routes are implemented to address potential connectivity issues, guaranteeing uninterrupted data flow even in adverse conditions.
 
 ### 4. Raspberry Pi Integration
-At the heart of our system lies the Raspberry Pi, serving as the central hub for data processing and storage. Leveraging the FastAPI framework, the Raspberry Pi efficiently processes incoming data from ESP32 devices before securely storing it in MongoDB. This orchestrated workflow enables comprehensive data management and analysis, laying the foundation for actionable insights into environmental sound dynamics.
+At the heart of our system lies the Raspberry Pi, serving as the central hub for data processing and storage. Leveraging the FastAPI framework, the Raspberry Pi efficiently processes incoming data from ESP32 devices before securely storing it in Cloud MongoDB. This orchestrated workflow enables comprehensive data management and analysis, laying the foundation for actionable insights into environmental sound dynamics.
 
 ### 5. Future Development Considerations
 As we embark on this journey of experimentation and validation, we remain cognizant of the opportunities for future development and improvement. Our methodology not only provides a roadmap for the validation of our proposed solution but also sets the stage for ongoing refinement and enhancement. Through continuous iteration and innovation, we strive to push the boundaries of environmental monitoring technology, ultimately contributing to a more sustainable and harmonious world.
@@ -80,12 +80,12 @@ ESP6 utilizes the MQTT protocol to transmit aggregated sound data to the Raspber
 * Upon receiving the data, the Raspberry Pi processes it using the Fast API framework within the Archethought RSP System.
 * Fast API interprets the data, extracts relevant information, and prepares it for storage.
 
-### 7. Data Storage in MongoDB
-* The processed sound data is securely stored in MongoDB, a versatile NoSQL database residing on the Raspberry Pi.
+### 7. Data Storage in cloud MongoDB
+* The processed sound data is securely stored in Cloud MongoDB, a versatile NoSQL database residing on the Raspberry Pi.
 * MongoDB's flexible structure and high-performance capabilities enable efficient storage and retrieval of sound data for further analysis.
 
 ### 8. Cloud Integration and Analysis
-* Sound data stored in MongoDB is seamlessly integrated with cloud services for comprehensive analysis and visualization.
+* Sound data stored in cloud MongoDB is seamlessly integrated with cloud services for comprehensive analysis and visualization.
 * Cloud-based tools and algorithms are employed to extract insights and patterns from the collected sound data, facilitating informed decision-making and monitoring of environmental conditions.
 
 ## Conclusion
