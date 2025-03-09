@@ -69,24 +69,44 @@ const char* macAddress[] = {
 esp_now_peer_info_t peerInfo;
 bool firstSuccessPrinted= false;
 //send data
-void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  Serial.print("Last Packet Send Status:  ");
-  if (status == ESP_NOW_SEND_SUCCESS) {
-        Serial.println("Delivery Success");
-        if (!firstSuccessPrinted) {
-            sendEndTime = millis();
-            elapsedSendTime = sendEndTime - sendStartTime;
-            Serial.print("Elapsed time from sending to delivery: ");
-            Serial.println(elapsedSendTime);
-            firstSuccessPrinted = true;  // Mark as printed
-        }
-    } else {
-        Serial.println("Delivery Fail");
-         firstSuccessPrinted = false; // Reset flag if failure occurs
-    }
-  //Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
-  sending = (status == ESP_NOW_SEND_SUCCESS) ? 0 : 1;
+// Add global variables for metrics
+StaticJsonDocument<200> metricsDoc;
+String metricsString;
 
+void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+  if (status == ESP_NOW_SEND_SUCCESS) {
+      if (!firstSuccessPrinted) {
+          sendEndTime = millis();
+          elapsedSendTime = sendEndTime - sendStartTime;
+          
+          // Clear and prepare new JSON document
+          metricsDoc.clear();
+          
+          // Find corresponding MAC address string
+          String targetMac = "";
+          for (int i = 0; i < 5; i++) {
+              if (memcmp(allAddress[i], mac_addr, 6) == 0) {
+                  targetMac = macAddress[i];
+                  break;
+              }
+          }
+          
+          // Add connection metrics
+          metricsDoc["status"] = "success";
+          metricsDoc["mac"] = targetMac;
+          metricsDoc["time"] = elapsedSendTime;
+          
+          // Serialize and output
+          serializeJson(metricsDoc, metricsString);
+          Serial.println(metricsString);
+          
+          firstSuccessPrinted = true;
+      }
+  } else {
+      Serial.println("Delivery Fail");
+      firstSuccessPrinted = false;
+  }
+  sending = (status == ESP_NOW_SEND_SUCCESS) ? 0 : 1;
 }
 
 //receive data
@@ -167,14 +187,13 @@ bool addPeerAtIndex(int index) {
   }
 }
 
-
 // Global variables for storing first data
 StaticJsonDocument<JSON_CAPACITY> savedJsonData;  // Store the first collected data
 bool firstDataCollected = false;  // Flag to mark if first data has been collected
 
 void loop() {
-    // Only collect new data on first run or after successful send
-    if (!firstDataCollected || (sending == 0 && !jsonReceived)) {
+    // Modify condition to ensure collecting new data after successful send
+    if (!firstDataCollected || sending == 0) {  // Remove jsonReceived condition
         if (recordingStartTime == 0) {
             recordingStartTime = millis();
             i2s_zero_dma_buffer(I2S_PORT);
@@ -213,13 +232,13 @@ void loop() {
         jsonData["ts"] = millis();
         jsonData["mac"] = WiFi.macAddress();
         
-        // Save first data
+        // Modify data saving logic
         if (!firstDataCollected) {
             savedJsonData = jsonData;
             firstDataCollected = true;
         }
     } else {
-        // Use saved data
+        // Use saved data only when sending failed
         jsonData = savedJsonData;
     }
     
@@ -229,12 +248,14 @@ void loop() {
     
     // Try to send to ESP32 number 5
     Serial.println("Trying to send to ESP32 number 5" );
+    sendStartTime = millis();  
     esp_err_t result = esp_now_send(allAddress[4], (uint8_t *)jsonString.c_str(), jsonString.length() + 1);
     delay(3000);
     
     // Reset flag after successful send
     if (sending == 0) {
         firstDataCollected = false;  // Allow collecting new data
+        savedJsonData.clear();
     }
     
     if (sending != 0) {
@@ -250,6 +271,7 @@ void loop() {
                 Serial.print("MAC address: ");
                 Serial.println(macAddress[i]);
                 
+                sendStartTime = millis(); 
                 result = esp_now_send(allAddress[i], (uint8_t *)jsonString.c_str(), jsonString.length() + 1);
                 delay(3000);
                 
@@ -321,17 +343,6 @@ float getSoundPressureLevel() {
     return spl;
 }
 
-// Remove these variables as we won't use them
-// const float a1 = -2.0185f;
-// const float a2 = 0.9820f;
-// const float a3 = -0.0000011f;
-// const float b0 = 1.0f;
-// const float b1 = -2.0f;
-// const float b2 = 1.0f;
-// float prevIn = 0.0f;
-// float prevPrevIn = 0.0f;
-// float prevOut = 0.0f;
-// float prevPrevOut = 0.0f;
 
 float applyAWeightingAndConvertToDB(float spl) {
     if (isnan(spl) || spl <= 0) {
@@ -355,4 +366,3 @@ float applyAWeightingAndConvertToDB(float spl) {
     
     return aWeighted;
 }
-
